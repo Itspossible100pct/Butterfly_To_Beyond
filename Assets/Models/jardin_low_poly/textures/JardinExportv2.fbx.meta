@@ -3,7 +3,67 @@ guid: 9e28d18b7e989df44a9e097b78aeb4a9
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02HOJA02
+    second: {fileID: 2100000, guid: 8df7672dad71668469f1a4195d167ac8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02aiStandardSurface1SG
+    second: {fileID: 2100000, guid: 718ed061c5be0a84e87a342aa530f854, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02lambert2SG
+    second: {fileID: 2100000, guid: 2d438e13d387aa248aed759a1a9d3f14, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG
+    second: {fileID: 2100000, guid: ed2edaa387102ee4fa3fa9deb99a45c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG1
+    second: {fileID: 2100000, guid: a4e3acb1265019543a86494f9e86e10e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG2
+    second: {fileID: 2100000, guid: d5100234da9d28243a74b223cef4b1d1, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02HOJA02_diffuse
+    second: {fileID: 2800000, guid: 750965fe2194c7d48bfe9611df9eb04b, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02aiStandardSurface1SG_diffuse
+    second: {fileID: 2800000, guid: 066c821187aa20543a79487464770b18, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: HOJA_02lambert2SG_diffuse
+    second: {fileID: 2800000, guid: 69c6c2ae7b92f384fa79de27ee8f96f6, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG1_diffuse
+    second: {fileID: 2800000, guid: 52ced218e2022ba41916c129e66dd3f9, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG2_diffuse
+    second: {fileID: 2800000, guid: 64663e8d3c3aa6648a6688985f0c0f84, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: PASTO_PLANTA02aiStandardSurface1SG_diffuse
+    second: {fileID: 2800000, guid: e3c587d47f1e1d14d9b45fc56d91b925, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

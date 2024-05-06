@@ -3,7 +3,87 @@ guid: bc849611439bb52409b4f23e78bcc197
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 04 - Default
+    second: {fileID: 2100000, guid: c69cde84e0964af4c8c4129978296d43, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 05 - Default
+    second: {fileID: 2100000, guid: 54135a9cb75c6ff43a3f3d9f7ffc414a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 06 - Default
+    second: {fileID: 2100000, guid: 1d51886235db197498cad1452d9df261, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: FLOWER
+    second: {fileID: 2100000, guid: 5795daecc01f8244987f42d50a3ec9d2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: FLOWER LEAF
+    second: {fileID: 2100000, guid: 4f43a625bca94df499ffbdb54b81442d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TRUNK
+    second: {fileID: 2100000, guid: b9c405e78dadbba41847d77fad5a8611, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: FLOWER GLOW
+    second: {fileID: 2800000, guid: 06d364e5b886e6645a348f77a2039bbb, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: FLOWER LEAF
+    second: {fileID: 2800000, guid: 9b9e19f6ef94ef9428d095f5733a8e47, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: FLOWER LEAF NM
+    second: {fileID: 2800000, guid: 72a3e89e5acfc4544a039b3a66c81010, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: FLOWER UV
+    second: {fileID: 2800000, guid: 7b2d70730ccc8194cb2e34111276c1da, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: MUSHROOM UV
+    second: {fileID: 2800000, guid: 0e9c066ecf4e81a47b6b56d2e1edfb87, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: TREE PLANT
+    second: {fileID: 2800000, guid: 4d81524bff07d204e8965e0829a21994, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: TRUNK DIFFUSE
+    second: {fileID: 2800000, guid: 6e9a88da8869e2e438a9e471e71e8449, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: TRUNK GLOW
+    second: {fileID: 2800000, guid: 603ae08654152634db3329e101ef65da, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: TRUNK NM
+    second: {fileID: 2800000, guid: 945da39a97b3bae48b5b68e9ffc49d19, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: butterfly diffuse
+    second: {fileID: 2800000, guid: 6f33495e6406d344e8c190dc04e4ef74, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
