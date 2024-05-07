@@ -6,6 +6,9 @@ using UnityEngine;
 public class DistanceHandPhysicsInteractor : DistanceHandGrabInteractor
 {
     // additional properties and methods for physics interaction
+
+    [SerializeField] private GameObject _flickFinger;
+    
     
     protected override void DoSelectUpdate()
     {
