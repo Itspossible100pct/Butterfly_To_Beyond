@@ -56,7 +56,8 @@ public class CaterpillarBehaviour : MonoBehaviour
             Debug.LogError("NavMeshAgent component missing from this game object.");
             agent = gameObject.AddComponent<NavMeshAgent>();
         }
-
+        // Start by moving to the first waypoint
+        currentState = State.Idle;
         GoToNextState();
     }
 
@@ -65,12 +66,17 @@ public class CaterpillarBehaviour : MonoBehaviour
         switch (currentState)
         {
             case State.Idle:
-                StartCoroutine(BehaveHungry());
+                // Move to the next waypoint if not already moving
+                if (currentWaypoint == 0) {
+                    MoveToNextWaypoint();
+                } else {
+                    StartCoroutine(BehaveHungry());
+                }
                 break;
             case State.Hungry:
                 // Check if the critical leaf fragment is inactive to change state
-                if ((currentWaypoint == 0 && !criticalFragmentLeaf1.activeSelf) ||
-                    (currentWaypoint == 2 && !criticalFragmentLeaf2.activeSelf))
+                if ((currentWaypoint == 1 && !criticalFragmentLeaf1.activeSelf) ||
+                    (currentWaypoint == 3 && !criticalFragmentLeaf2.activeSelf))
                 {
                     StartCoroutine(EatingBehavior());
                 }
@@ -79,14 +85,13 @@ public class CaterpillarBehaviour : MonoBehaviour
                 MoveToNextWaypoint();
                 break;
             case State.Afraid:
-                // At waypoint 1, caterpillar waits for enemies to be defeated
-                if (currentWaypoint == 1 && enemiesDefeated)
-                {
-                    StartCoroutine(ShowHappyAndRelief());
+                if (currentWaypoint == 2) {
+                    // Ensure we trigger the Afraid behavior only after reaching the 2nd waypoint
+                    StartCoroutine(PerformAfraidBehavior());
                 }
                 break;
             case State.Happy:
-                if (currentWaypoint == 2)
+                if (currentWaypoint == 3)
                 {
                     currentState = State.Celebration;
                     GoToNextState();
@@ -104,10 +109,13 @@ public class CaterpillarBehaviour : MonoBehaviour
 
     IEnumerator BehaveHungry()
     {
-        audioSource.PlayOneShot(hungrySound);
-        animator.SetTrigger("isHungry");
+        // Ensure we are at the correct waypoint to start being hungry
+        if (currentWaypoint >= 1) {
+            audioSource.PlayOneShot(hungrySound);
+            animator.SetTrigger("isHungry");
+        }
         yield return new WaitForSeconds(2);
-        currentState = State.Hungry; // Stay in Hungry until fed
+        currentState = State.Hungry;
     }
 
     public void Feed()
@@ -137,15 +145,23 @@ public class CaterpillarBehaviour : MonoBehaviour
         {
             currentWaypoint++;
             agent.SetDestination(waypoints[currentWaypoint].position);
-            currentState = State.Idle; // Reset to Idle to trigger next behavior
+            Debug.Log("Moving to waypoint: " + currentWaypoint);
+
+            // Automatically proceed to being hungry if needed after reaching the first waypoint
+            if (currentWaypoint == 1) {
+                currentState = State.Idle;
+            } else {
+                currentState = State.Idle; // Continue idle until the next action is determined
+            }
             GoToNextState();
         }
         else
         {
-            currentState = State.Celebration; // Last waypoint celebration
+            currentState = State.Celebration;
             GoToNextState();
         }
     }
+
 
     IEnumerator ShowHappyAndRelief()
     {
@@ -175,7 +191,7 @@ public class CaterpillarBehaviour : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("AntSpawnTrigger"))
+        if (other.CompareTag("AntSpawnTrigger") && currentWaypoint == 2)
         {
             StartCoroutine(SpawnAnts());
         }
