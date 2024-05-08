@@ -42,6 +42,8 @@ public class CaterpillarBehaviour : MonoBehaviour
             Instance = this;
         else if (Instance != this)
             Destroy(gameObject);
+
+        audioSource.playOnAwake = false;
     }
     void Start()
     {
