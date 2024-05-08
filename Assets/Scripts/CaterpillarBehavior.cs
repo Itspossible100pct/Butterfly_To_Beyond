@@ -143,14 +143,23 @@ public class CaterpillarBehaviour : MonoBehaviour
     {
         if (currentWaypoint < waypoints.Length - 1)
         {
-            currentWaypoint++;
-            agent.SetDestination(waypoints[currentWaypoint].position);
-            Debug.Log("Moving to waypoint: " + currentWaypoint);
+            if (currentWaypoint < waypoints.Length - 1)
+            {
+                currentWaypoint++;
+                agent.SetDestination(waypoints[currentWaypoint].position);
 
-            // Automatically proceed to being hungry if needed after reaching the first waypoint
-            if (currentWaypoint == 1) {
-                currentState = State.Idle;
-            } else {
+                // Check if it's time to start the Hungry behavior
+                if (currentWaypoint == 1 || currentWaypoint == 3) {
+                    StartCoroutine(BehaveHungry());
+                } 
+                else 
+                {
+                    currentState = State.Idle;
+                    GoToNextState();
+                }
+            } 
+            else 
+            {
                 currentState = State.Idle; // Continue idle until the next action is determined
             }
             GoToNextState();
@@ -218,6 +227,18 @@ public class CaterpillarBehaviour : MonoBehaviour
         {
             audioSource.PlayOneShot(happySound);
             yield return new WaitForSeconds(happySound.length);
+        }
+    }
+    
+    IEnumerator PerformAfraidBehavior()
+    {
+        // Play the scared sound and trigger the animator only if it's the right waypoint
+        if (currentWaypoint == 2) {
+            audioSource.PlayOneShot(scaredSound);
+            animator.SetTrigger("scared");
+            yield return new WaitForSeconds(2);
+            currentState = State.Happy;
+            GoToNextState();
         }
     }
 }
