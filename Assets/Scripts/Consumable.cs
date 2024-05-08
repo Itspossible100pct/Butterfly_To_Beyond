@@ -7,6 +7,7 @@ using Random = UnityEngine.Random;
 
 public class Consumable : MonoBehaviour
 {
+    [SerializeField] private CaterpillarBehaviour _caterpillar;
     [SerializeField] private GameObject[] portions;
     [SerializeField] private int index = 0;
 
@@ -45,6 +46,7 @@ public class Consumable : MonoBehaviour
             SetVisuals();
             index++;
             _audioSource.PlayOneShot(_eatingSounds[Random.Range(0, _eatingSounds.Length)], .3f);
+            _caterpillar.Feed();
         }
     }
 

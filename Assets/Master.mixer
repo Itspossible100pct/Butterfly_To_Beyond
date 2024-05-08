@@ -72,7 +72,7 @@ AudioMixerSnapshotController:
   m_SnapshotID: 6f764312504bec24fab2616c858d46bf
   m_FloatValues:
     f9b3720463196cf4eb649f8339dd8e21: -8.0101185
-    3adda468ec963a54c9305ac988e33436: -80
+    3adda468ec963a54c9305ac988e33436: -56.45051
   m_TransitionOverrides: {}
 --- !u!243 &137932672803635769
 AudioMixerGroupController:
@@ -80,7 +80,7 @@ AudioMixerGroupController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: mx
+  m_Name: Music
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: 759e05d99bc0410459e9fb6a38f3b7b5
   m_Children: []
@@ -99,7 +99,7 @@ AudioMixerGroupController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: sfx
+  m_Name: SFX
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: 501eadabeeb97b74ab9b66c1e9732121
   m_Children: []
@@ -160,7 +160,7 @@ AudioMixerGroupController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: char
+  m_Name: Character
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: 82cc3d5dc86503d48a8906a7e6505fb4
   m_Children: []
