@@ -35,6 +35,8 @@ public class CaterpillarBehaviour : MonoBehaviour
     private enum State { Idle, Hungry, Eating, Afraid, Happy, Celebration }
     private State currentState = State.Idle;
 
+    private bool isAntSpawned;
+
     
     void Awake()
     {
@@ -65,6 +67,7 @@ public class CaterpillarBehaviour : MonoBehaviour
             }
         }
 
+        currentWaypoint = 1;
         GoToNextState();
     }
 
@@ -86,10 +89,10 @@ public class CaterpillarBehaviour : MonoBehaviour
                 }
                 break;
             case State.Eating:
-                MoveToNextWaypoint();
+                //MoveToNextWaypoint();
                 break;
             case State.Afraid:
-                if (currentWaypoint == 2 && enemiesDefeated) {
+                if (currentWaypoint == 2 && !enemiesDefeated) {
                     StartCoroutine(PerformAfraidBehavior());
                 }
                 break;
@@ -110,6 +113,44 @@ public class CaterpillarBehaviour : MonoBehaviour
         }
         Debug.Log($"New state is {currentState}");
     }
+    
+    void MoveToNextWaypoint()
+    {
+        if (currentWaypoint < waypoints.Length - 1)
+        {
+            //currentWaypoint++;
+            
+            if (!agent.isActiveAndEnabled || !agent.isOnNavMesh)
+            {
+                Debug.LogError("Agent is not active or not on NavMesh when trying to move.");
+                return;
+            }
+            
+            agent.SetDestination(waypoints[currentWaypoint].position);
+            Debug.Log($"Setting destination to waypoint {currentWaypoint} at position {waypoints[currentWaypoint].position}");
+
+            // Prepare the caterpillar for the next state based on the waypoint
+            if (currentWaypoint == 1 || currentWaypoint == 3)
+            {
+                StartCoroutine(BehaveHungry());
+            }
+            else if (currentWaypoint == 2)
+            {
+                // At waypoint 2, check if ants should spawn
+                if (!isAntSpawned) {
+                    SpawnAnts(); // Spawn ants if they have not been spawned
+                    isAntSpawned = true; // Prevents re-spawning ants
+                }
+                currentState = State.Afraid; // Set state to Afraid
+                GoToNextState(); // Proceed to process the next state
+            }
+        }
+        else
+        {
+            currentState = State.Celebration;
+            GoToNextState();
+        }
+    }
 
     IEnumerator BehaveHungry()
     {
@@ -129,10 +170,21 @@ public class CaterpillarBehaviour : MonoBehaviour
     
     IEnumerator PerformAfraidBehavior()
     {
+        
+        
         // Check if the caterpillar is at the right waypoint to start the "Afraid" behavior
-        if (currentWaypoint == 2) {
+        if (currentWaypoint == 2 && !isAntSpawned) 
+        {
+            
+            // Spawn ants here and ensure it's not repeated
+            SpawnAnts();
+            isAntSpawned = true;
+            
+            yield return new WaitForSeconds(5);
+            
             audioSource.PlayOneShot(scaredSound);
             animator.SetTrigger("Afraid");
+
             yield return new WaitForSeconds(2);
             currentState = State.Happy;
             GoToNextState();
@@ -157,60 +209,32 @@ public class CaterpillarBehaviour : MonoBehaviour
             // Check if it's the first feeding at Waypoint 1
             if (currentWaypoint == 1 && !criticalFragmentLeaf1.activeSelf)
             {
-                currentWaypoint = 2; // Directly set to waypoint 2
-                MoveToNextWaypoint();
+                currentState = State.Idle; // Make sure the state is reset to idle before moving
+                currentWaypoint = 2;  // Move to the next waypoint logically
+                Debug.Log("Waypoint change to 2. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                MoveToNextWaypoint(); // Move physically to the next waypoint
+                
+                
             }
             else if (currentWaypoint == 3 && !criticalFragmentLeaf2.activeSelf)
             {
+                Debug.Log("Transition to celebration after feeding at waypoint 3.");
                 yield return new WaitForSeconds(2);
-                StartCoroutine(StartCelebration());
+                currentState = State.Celebration;
+                GoToNextState();
             }
             else
             {
+                Debug.Log("Unexpected feeding situation at waypoint " + currentWaypoint);
                 currentState = State.Eating;
-                GoToNextState();
+                MoveToNextWaypoint(); // Make sure to continue moving correctly
             }
             
             
         }
     }
 
-    void MoveToNextWaypoint()
-    {
-        if (currentWaypoint < waypoints.Length - 1)
-        {
-            currentWaypoint++;
-            
-            if (!agent.isActiveAndEnabled || !agent.isOnNavMesh)
-            {
-                Debug.LogError("Agent is not active or not on NavMesh when trying to move.");
-                return;
-            }
-            agent.SetDestination(waypoints[currentWaypoint].position);
-            Debug.Log($"Setting destination to waypoint {currentWaypoint} at position {waypoints[currentWaypoint].position}");
 
-            if (currentWaypoint == 2)
-            {
-                StartCoroutine(SpawnAnts()); // Start spawning ants when reaching waypoint 2
-                currentState = State.Afraid; // Set state to Afraid after ants start spawning
-            }
-            else if (currentWaypoint == 1 || currentWaypoint == 3) 
-            {
-                currentState = State.Hungry; // Set state immediately
-                StartCoroutine(BehaveHungry()); 
-            }
-            else 
-            {
-                currentState = State.Idle;
-                GoToNextState();
-            }
-        }
-        else
-        {
-            //currentState = State.Celebration;
-            //GoToNextState();
-        }
-    }
 
     IEnumerator ShowHappyAndRelief()
     {
@@ -223,28 +247,24 @@ public class CaterpillarBehaviour : MonoBehaviour
         GoToNextState();
     }
 
-    public IEnumerator SpawnAnts()
+    public void SpawnAnts()
     {
+        Debug.Log("Spawning ants now.");
         for (int i = 0; i < totalAnts; i++)
         {
-            GameObject ant = Instantiate(antPrefab);
+            GameObject ant = Instantiate(antPrefab, waypoints[currentWaypoint].position + new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)), Quaternion.identity);
             ant.GetComponent<AntEnemyBehavior>().ActivateAnt(transform);
-
-            if (i < totalAnts - 1)
-            {
-                yield return new WaitForSeconds(3);
-            }
         }
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("AntSpawnTrigger") && currentWaypoint == 2)
-        {
-            Debug.Log("AntSpawnTrigger activated at waypoint " + currentWaypoint);
-            StartCoroutine(SpawnAnts());
-        }
-    }
+    // void OnTriggerEnter(Collider other)
+    // {
+    //     if (other.CompareTag("AntSpawnTrigger") && currentWaypoint == 2)
+    //     {
+    //         Debug.Log("AntSpawnTrigger activated at waypoint " + currentWaypoint);
+    //         StartCoroutine(SpawnAnts());
+    //     }
+    // }
 
     public void EnemyDefeated()
     {
