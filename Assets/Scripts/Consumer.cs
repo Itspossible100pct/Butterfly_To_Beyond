@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class Consumer : MonoBehaviour
 {
+    [SerializeField] private CaterpillarBehaviour _caterpillar;
     private Collider _collider;
     
     void Start()
@@ -20,6 +21,8 @@ public class Consumer : MonoBehaviour
         if (consumable != null && !consumable.IsFinished)
         {
             consumable.Consume();
+            
+            _caterpillar.Feed();
         }
     }
 }

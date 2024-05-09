@@ -46,7 +46,11 @@ public class Consumable : MonoBehaviour
             SetVisuals();
             index++;
             _audioSource.PlayOneShot(_eatingSounds[Random.Range(0, _eatingSounds.Length)], .3f);
-            _caterpillar.Feed();
+            //_caterpillar.isFed = true;
+        }
+        else
+        {
+            //_caterpillar.isFed = true;
         }
     }
 
