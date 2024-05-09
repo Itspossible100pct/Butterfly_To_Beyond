@@ -1,10 +1,13 @@
 using System.Collections;
+using Oculus.Interaction.Samples;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class CaterpillarBehaviour : MonoBehaviour
 {
     public static CaterpillarBehaviour Instance;
+
+    public Transform headTransform;
     
     public Animator animator;
     public AudioSource audioSource;
@@ -32,13 +35,321 @@ public class CaterpillarBehaviour : MonoBehaviour
     [SerializeField] private GameObject criticalFragmentLeaf1;
     [SerializeField] private GameObject criticalFragmentLeaf2;
 
-    private enum State { Idle, Hungry, Eating, Afraid, Happy, Celebration }
-    private State currentState = State.Idle;
+    public Transform foodItem; // Assign in the inspector
+    public Transform player; // Assign in the inspector
+    
+    // Define an enum to hold the state identifiers
+    public enum State
+    {
+        Idle,
+        Walking,
+        Hungry,
+        Eating,
+        Afraid,
+        Happy,
+        Celebrating
+    }
+    // Current state of the Caterpillar
+    private State currentState;
+    private bool isIdleCoroutineStarted = false;
+    private Coroutine cuteSoundCoroutine = null;
+    
+    // Initialization
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        agent.stoppingDistance = 0.1f;
 
-    private bool isAntSpawned;
+        // Set a reasonable speed for the caterpillar
+        agent.speed = moveSpeed;  // Ensure this is set to a value that makes sense for your game
+
+        TransitionToState(State.Idle);
+    }
 
     
-    void Awake()
+    // IEnumerator PlayInitialHungrySound()
+    // {
+    //     yield return new WaitForSeconds(1);
+    //     if (!audioSource.isPlaying) {
+    //         audioSource.PlayOneShot(hungrySound);
+    //         Debug.Log("Start: Played initial hungry sound after 1 second.");
+    //     }
+    // }
+
+    // Update is called once per frame
+    void Update()
+    {
+        switch (currentState)
+        {
+            case State.Idle:
+                IdleBehavior();
+                break;
+            case State.Walking:
+                WalkingBehavior();
+                break;
+            case State.Hungry:
+                HungryBehavior();
+                break;
+            case State.Eating:
+                EatingBehavior();
+                break;
+            case State.Afraid:
+                AfraidBehavior();
+                break;
+            case State.Happy:
+                HappyBehavior();
+                break;
+            case State.Celebrating:
+                CelebratingBehavior();
+                break;
+        }
+    }
+
+    void TransitionToState(State newState)
+    {
+        // Stop the current playing coroutine if we are leaving the Idle state
+        if (currentState == State.Idle && newState != State.Idle)
+        {
+            if (cuteSoundCoroutine != null)
+            {
+                StopCoroutine(cuteSoundCoroutine);
+                cuteSoundCoroutine = null;
+            }
+        }
+
+        currentState = newState;
+        Debug.Log("Transitioning to: " + newState);
+    }
+
+
+    IEnumerator PlayCuteSoundRandomly()
+    {
+        while (currentState == State.Idle)
+        {
+            yield return new WaitForSeconds(Random.Range(5f, 10f));
+            if (!audioSource.isPlaying)
+            {
+                audioSource.PlayOneShot(cuteSound);
+                Debug.Log("IdleBehavior: Played a cute sound after a random interval.");
+            }
+        }
+    }
+
+
+    void LookAround()
+    {
+        // Ensure the headTransform is assigned
+        if (headTransform != null)
+        {
+            // Calculate the rotation angle using a sine wave for smooth oscillation
+            float rotationAngle = Mathf.Sin(Time.time * 0.5f) * 30f; // 0.5f to control the speed of rotation
+            headTransform.localRotation = Quaternion.Euler(0, rotationAngle, 0);
+            Debug.Log("IdleBehavior: Head looking around with limited Y-axis rotation.");
+        }
+        else
+        {
+            Debug.LogError("Head Transform is not assigned in the Inspector.");
+        }
+    }
+
+
+    void WalkingBehavior()
+    {
+        if (currentWaypoint >= waypoints.Length)
+        {
+            Debug.LogError("Walking: Current waypoint index is out of range.");
+            return;
+        }
+
+        // Look at the next waypoint before moving
+        StartCoroutine(LookAtDirection(waypoints[currentWaypoint].position));
+
+        // Set the destination
+        agent.SetDestination(waypoints[currentWaypoint].position);
+
+        // Check if we are close enough to the current waypoint to consider it "reached"
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        {
+            if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
+            {
+                Debug.Log($"Reached waypoint {currentWaypoint}.");
+                currentWaypoint++;
+                if (currentWaypoint < waypoints.Length)
+                {
+                    // Continue looking and moving towards the next waypoint
+                    Debug.Log($"Moving to waypoint {currentWaypoint}.");
+                    StartCoroutine(LookAtDirection(waypoints[currentWaypoint].position));
+                    agent.SetDestination(waypoints[currentWaypoint].position);
+                }
+                else
+                {
+                    Debug.Log("All waypoints visited, transitioning to Idle.");
+                    TransitionToState(State.Idle);
+                }
+            }
+        }
+    }
+    
+    
+    private float nextCuteSoundTime = 0f;
+    private float soundCooldown = 10f;  // Cooldown in seconds before playing the next cute sound
+
+    void IdleBehavior()
+    {
+        if (!isIdleCoroutineStarted)
+        {
+            // Play the cute sound just once when first entering Idle state, with cooldown
+            if (Time.time >= nextCuteSoundTime)
+            {
+                audioSource.PlayOneShot(cuteSound);
+                Debug.Log("IdleBehavior: Played a cute sound once entering Idle state.");
+                nextCuteSoundTime = Time.time + soundCooldown;
+            }
+            isIdleCoroutineStarted = true;
+        }
+
+        LookAround();
+
+        if (currentWaypoint < waypoints.Length)
+        {
+            isIdleCoroutineStarted = false;  // Reset for the next time we enter Idle state
+            TransitionToState(State.Walking);
+        }
+    }
+
+
+
+
+
+    void HungryBehavior()
+    {
+        Debug.Log("Hungry: Starting Hungry Behavior.");
+        StartCoroutine(HungrySequence());
+    }
+
+    IEnumerator HungrySequence()
+    {
+        Debug.Log("HungrySequence: Started");
+
+        yield return LookAtTarget(foodItem.position);
+        yield return new WaitForSeconds(2);
+
+        if (!audioSource.isPlaying && Time.time >= nextCuteSoundTime)
+        {
+            audioSource.PlayOneShot(hungrySound);
+            Debug.Log("HungrySequence: Played hunger sound.");
+            nextCuteSoundTime = Time.time + soundCooldown;
+        }
+
+        yield return new WaitForSeconds(1);
+        yield return LookAtTarget(player.position);
+
+        if (!audioSource.isPlaying && Time.time >= nextCuteSoundTime)
+        {
+            audioSource.PlayOneShot(cuteSound);
+            Debug.Log("HungrySequence: Played cute sound.");
+            nextCuteSoundTime = Time.time + soundCooldown;
+        }
+
+        yield return new WaitForSeconds(2);
+
+        if (!audioSource.isPlaying && Time.time >= nextCuteSoundTime)
+        {
+            audioSource.PlayOneShot(cuteSound);
+            Debug.Log("HungrySequence: Played another cute sound.");
+            nextCuteSoundTime = Time.time + soundCooldown;
+        }
+
+        while (!isFed)
+        {
+            yield return LookAtTarget(player.position);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        TransitionToState(State.Eating);
+    }
+
+
+    
+    IEnumerator LookAtTarget(Vector3 target)
+    {
+        Vector3 direction = (target - headTransform.position).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(direction);
+        float time = 0;
+        while (time < 1)
+        {
+            headTransform.rotation = Quaternion.Slerp(headTransform.rotation, lookRotation, time);
+            time += Time.deltaTime * 2; // Adjust this value to change the speed of the rotation
+            yield return null;
+        }
+    }
+
+    public void EatingBehavior()
+    {
+        Debug.Log("Eating: Playing eating sounds and animations.");
+        // Implement eating behavior
+            isFed = true;
+            audioSource.PlayOneShot(eatSound);
+            animator.SetTrigger("Eating"); // a DotTween wiggle.
+            transform.localScale *= 1.05f;
+
+        // Transition based on leaf and waypoint logic
+        if (currentWaypoint == waypoints.Length - 1)
+        {
+            TransitionToState(State.Celebrating);
+        }
+        else
+        {
+            TransitionToState(State.Idle);
+        }
+    }
+
+    void AfraidBehavior()
+    {
+        Debug.Log("Afraid: Playing scared sounds and animations.");
+        // Implement Afraid behavior
+
+        // Transition to Happy when ants are defeated
+        TransitionToState(State.Happy);
+    }
+
+    void HappyBehavior()
+    {
+        Debug.Log("Happy: Playing happy sounds and animations.");
+        // Implement Happy behavior
+
+        // Transition to next state based on conditions
+        TransitionToState(State.Idle);
+    }
+
+    void CelebratingBehavior()
+    {
+        Debug.Log("Celebrating: Playing celebration animations and sounds.");
+        // Implement Celebrating behavior
+    }
+   
+
+    IEnumerator LookAtDirection(Vector3 target)
+    {
+        Vector3 direction = (target - transform.position).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+        float time = 0;
+
+        while (time < 1f)
+        {
+            // Smoothly interpolate the rotation over one second
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, time);
+            time += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    
+    
+    
+    
+    
+    /* void Awake()
     {
         if (Instance == null)
             Instance = this;
@@ -310,5 +621,5 @@ public class CaterpillarBehaviour : MonoBehaviour
         yield return new WaitForSeconds(5);
         currentWaypoint = 3;
         MoveToNextWaypoint();
-    }
+    }*/
 }

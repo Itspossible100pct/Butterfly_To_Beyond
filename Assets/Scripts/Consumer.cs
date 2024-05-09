@@ -22,7 +22,7 @@ public class Consumer : MonoBehaviour
         {
             consumable.Consume();
             
-            _caterpillar.Feed();
+            _caterpillar.EatingBehavior();
         }
     }
 }

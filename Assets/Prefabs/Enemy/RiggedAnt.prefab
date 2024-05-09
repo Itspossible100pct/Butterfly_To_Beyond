@@ -41,7 +41,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
@@ -51,7 +51,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
@@ -66,7 +66,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 78a97fe29157dfa4985e68728dfe33e0,
         type: 3}
@@ -209,6 +209,7 @@ MonoBehaviour:
   agent: {fileID: 2820020011085663662}
   target: {fileID: 0}
   _audioSource: {fileID: 0}
+  _antSound: {fileID: 0}
 --- !u!82 &6390668014774648410
 AudioSource:
   m_ObjectHideFlags: 0

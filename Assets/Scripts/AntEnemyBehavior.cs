@@ -25,7 +25,9 @@ public class AntEnemyBehavior : MonoBehaviour
         Vector3 spawnPosition = target.position + Random.insideUnitSphere * 3;
         spawnPosition.y = target.position.y;
         transform.position = spawnPosition;
-        transform.rotation = Quaternion.Euler(0, 180, 0);
+        
+        //transform.rotation = Quaternion.Euler(0, 180, 0);
+        
         agent.speed = 2.0f;
         gameObject.SetActive(true);
         MoveTowardsTarget();
@@ -53,7 +55,7 @@ public class AntEnemyBehavior : MonoBehaviour
         if (agent.isActiveAndEnabled)
         {
             float distanceToTarget = Vector3.Distance(transform.position, target.position);
-            if (distanceToTarget > 0.1f)
+            if (distanceToTarget > 0.5f)
             {
                 agent.SetDestination(target.position);
             }
