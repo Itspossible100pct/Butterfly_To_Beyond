@@ -1,37 +1,50 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class AntEnemyBehavior : MonoBehaviour
 {
     public NavMeshAgent agent;
-    public Transform target; // The target (Caterpillar) the ant will move towards
+    public Transform target;
+    private float timer = 0f;
+    private bool runAway = false;
+
+    [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private AudioClip _antSound;
+    
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        gameObject.SetActive(false); // Start with the ant deactivated
+        //gameObject.SetActive(false);
     }
 
     public void ActivateAnt(Transform caterpillarTransform)
     {
         target = caterpillarTransform;
-
-        // Spawn this ant at a random position around the caterpillar within a 3-unit radius
         Vector3 spawnPosition = target.position + Random.insideUnitSphere * 3;
-        spawnPosition.y = target.position.y; // Ensure they are on the same ground level if needed
+        spawnPosition.y = target.position.y;
         transform.position = spawnPosition;
-
+        transform.rotation = Quaternion.Euler(0, 180, 0);
+        agent.speed = 2.0f;
         gameObject.SetActive(true);
-
-        // Start moving towards the caterpillar
         MoveTowardsTarget();
     }
 
     void Update()
     {
-        if (target != null && gameObject.activeSelf)
+        if (gameObject.activeSelf)
         {
-            MoveTowardsTarget();
+            timer += Time.deltaTime;
+            if (timer > 10f && !runAway)
+            {
+                RunAway();
+                runAway = true;
+            }
+            if (!runAway && target != null)
+            {
+                MoveTowardsTarget();
+            }
         }
     }
 
@@ -39,19 +52,39 @@ public class AntEnemyBehavior : MonoBehaviour
     {
         if (agent.isActiveAndEnabled)
         {
-            agent.SetDestination(target.position);
+            float distanceToTarget = Vector3.Distance(transform.position, target.position);
+            if (distanceToTarget > 0.1f)
+            {
+                agent.SetDestination(target.position);
+            }
+            else
+            {
+                agent.SetDestination(transform.position);
+            }
         }
+    }
+
+    void RunAway()
+    {
+        Vector3 directionAwayFromTarget = transform.position - target.position;
+        Vector3 runAwayPosition = transform.position + directionAwayFromTarget.normalized * 8;
+        agent.SetDestination(runAwayPosition);
+        _audioSource.PlayOneShot(_antSound, .7f);
+
+        StartCoroutine(WaitAndDie());
     }
 
     public void Die()
     {
-        // Play any death animation or sound
-        // For now, we will just deactivate the GameObject
         gameObject.SetActive(false);
-
-        // Notify the CaterpillarBehaviour script that an enemy has been defeated
-        //CaterpillarBehaviour.Instance.EnemyDefeated();
     }
     
-    
+    IEnumerator WaitAndDie()
+    {
+        while (Vector3.Distance(transform.position, target.position) < 5f)
+        {
+            yield return null; // Wait until next frame before rechecking the condition
+        }
+        Die();
+    }
 }

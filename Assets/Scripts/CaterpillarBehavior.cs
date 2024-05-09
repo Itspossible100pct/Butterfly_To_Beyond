@@ -253,7 +253,20 @@ public class CaterpillarBehaviour : MonoBehaviour
         for (int i = 0; i < totalAnts; i++)
         {
             GameObject ant = Instantiate(antPrefab, waypoints[currentWaypoint].position + new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)), Quaternion.identity);
-            ant.GetComponent<AntEnemyBehavior>().ActivateAnt(transform);
+        
+            // Make sure the ant is active. If the prefab was inactive, we need to activate it here.
+            ant.SetActive(true);
+
+            // Now ensure that the ant's behavior script is also properly activated
+            AntEnemyBehavior antBehavior = ant.GetComponent<AntEnemyBehavior>();
+            if (antBehavior != null)
+            {
+                antBehavior.ActivateAnt(transform);
+            }
+            else
+            {
+                Debug.LogError("Ant prefab does not have AntEnemyBehavior attached!");
+            }
         }
     }
 
@@ -277,6 +290,9 @@ public class CaterpillarBehaviour : MonoBehaviour
             {
                 StartCoroutine(ShowHappyAndRelief()); // Show happy and relief after all enemies are defeated
             }
+
+            StartCoroutine(MoveToWaypoint3());
+
         }
     }
 
@@ -287,5 +303,12 @@ public class CaterpillarBehaviour : MonoBehaviour
         audioSource.PlayOneShot(happySound);
             yield return new WaitForSeconds(happySound.length);
         
+    }
+
+    IEnumerator MoveToWaypoint3()
+    {
+        yield return new WaitForSeconds(5);
+        currentWaypoint = 3;
+        MoveToNextWaypoint();
     }
 }
