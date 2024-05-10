@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Oculus.Interaction.Samples;
 using UnityEngine;
 using UnityEngine.AI;
+using Random = UnityEngine.Random;
 
 public class CaterpillarBehaviour : MonoBehaviour
 {
@@ -66,6 +68,7 @@ public class CaterpillarBehaviour : MonoBehaviour
         agent.speed = moveSpeed;  // Ensure this is set to a value that makes sense for your game
 
         TransitionToState(State.Idle);
+        
     }
 
     
@@ -456,7 +459,15 @@ IEnumerator HandleWaypoint2Actions()
             yield return null;
         }
     }
-    
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("AntSpawnTrigger") && currentState == State.Walking)
+        {
+            StartCoroutine(SpawnAnts());
+        }
+    }
+
     IEnumerator SpawnAnts()
     {
         Debug.Log("Spawning Ants Now");
