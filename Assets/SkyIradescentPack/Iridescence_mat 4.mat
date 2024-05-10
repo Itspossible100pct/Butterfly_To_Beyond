@@ -103,7 +103,7 @@ Material:
     - _DstBlend: 0
     - _EnableIridescence: 1
     - _EnvironmentReflections: 1
-    - _FresnelPower: 0.788
+    - _FresnelPower: 1.3
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0

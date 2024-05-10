@@ -462,7 +462,8 @@ IEnumerator HandleWaypoint2Actions()
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("AntSpawnTrigger") && currentState == State.Walking)
+        Debug.Log("Trigger entered: " + other.gameObject.name + tag);
+        if (other.CompareTag("AntSpawnTrigger") )
         {
             StartCoroutine(SpawnAnts());
         }
