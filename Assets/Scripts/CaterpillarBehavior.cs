@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using Oculus.Interaction.Samples;
 using UnityEngine;
 using UnityEngine.AI;
@@ -166,9 +167,10 @@ public class CaterpillarBehaviour : MonoBehaviour
             Debug.LogError("Walking: Current waypoint index is out of range.");
             return;
         }
-
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        Debug.Log($"Remaining distance to waypoint {currentWaypoint}: {agent.remainingDistance}");
+        if (!agent.pathPending)
         {
+            
             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
             {
                 Debug.Log($"Walking: Reached waypoint {currentWaypoint}.");
@@ -350,6 +352,7 @@ public void EatingBehavior()
 
     animator.SetTrigger("Eating");  // Play eating animation
     transform.localScale *= scalePerBite;  // Scale up the caterpillar
+    
     Debug.Log("Eating: Caterpillar scaled for bite " + (currentBiteCount + 1));
 
     // Increment the bite count
@@ -420,19 +423,53 @@ IEnumerator HandleWaypoint2Actions()
 
 
 
-    void AfraidBehavior()
-    {
-        Debug.Log("Afraid: Playing scared sounds and animations.");
-        // Implement Afraid behavior
+void AfraidBehavior()
+{
+    Debug.Log("Afraid: Playing scared sounds and animations.");
+    // Implement Afraid behavior
+    audioSource.PlayOneShot(scaredSound, 1);
+    //transform.DOShakePosition(5f, 3f, 5, 2f, false, true, ShakeRandomnessMode.Full);
 
-        // Transition to Happy when ants are defeated
+    // Check if all ants are defeated
+    if (spawnedAnts.TrueForAll(ant => ant == null))
+    {
+        Debug.Log("Afraid: All enemies defeated, transitioning to Happy.");
         TransitionToState(State.Happy);
     }
+    else
+    {
+        // Optionally, keep checking periodically or set up an event/listener to trigger this check
+        StartCoroutine(CheckEnemiesDefeated());
+    }
+}
+
+IEnumerator CheckEnemiesDefeated()
+{
+    // Wait for a short period before checking again to give time for conditions to change
+    yield return new WaitForSeconds(0.5f);
+
+    // Re-check if all ants are defeated
+    if (spawnedAnts.TrueForAll(ant => ant == null))
+    {
+        Debug.Log("Afraid: All enemies defeated on re-check, transitioning to Happy.");
+        TransitionToState(State.Happy);
+    }
+    else
+    {
+        // Continue to check if still in Afraid state
+        if (currentState == State.Afraid)
+        {
+            StartCoroutine(CheckEnemiesDefeated());
+        }
+    }
+}
 
     void HappyBehavior()
     {
         Debug.Log("Happy: Playing happy sounds and animations.");
         // Implement Happy behavior
+        audioSource.PlayOneShot(happySound, 1);
+        transform.DOJump(transform.position, 0.5f, 1, .2f);
 
         // Transition to next state based on conditions
         TransitionToState(State.Idle);
@@ -442,6 +479,8 @@ IEnumerator HandleWaypoint2Actions()
     {
         Debug.Log("Celebrating: Playing celebration animations and sounds.");
         // Implement Celebrating behavior
+        audioSource.PlayOneShot(happySound, 1);
+        transform.DOJump(transform.position, 0.5f, 1, .2f);
     }
    
 
@@ -466,6 +505,15 @@ IEnumerator HandleWaypoint2Actions()
         if (other.CompareTag("AntSpawnTrigger") )
         {
             StartCoroutine(SpawnAnts());
+            if (currentState == State.Idle && currentWaypoint == 2 && !enemiesDefeated)
+            {
+                currentState = State.Afraid;
+            }
+            else if (enemiesDefeated)
+            {
+                return;
+            }
+            
         }
     }
 
@@ -500,6 +548,9 @@ IEnumerator HandleWaypoint2Actions()
                 Debug.LogError("AntBehavior component is not found on the antPrefab. Make sure it's attached.");
             }
 
+            
+            
+            
             // Wait before spawning the next ant
             yield return new WaitForSeconds(antSpawnDelay);
         }
