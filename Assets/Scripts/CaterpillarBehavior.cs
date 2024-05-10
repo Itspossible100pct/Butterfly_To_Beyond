@@ -161,34 +161,70 @@ public class CaterpillarBehaviour : MonoBehaviour
             return;
         }
 
-        // Look at the next waypoint before moving
-        StartCoroutine(LookAtDirection(waypoints[currentWaypoint].position));
-
-        // Set the destination
-        agent.SetDestination(waypoints[currentWaypoint].position);
-
-        // Check if we are close enough to the current waypoint to consider it "reached"
+        // Move towards the current waypoint
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
             {
                 Debug.Log($"Reached waypoint {currentWaypoint}.");
-                currentWaypoint++;
-                if (currentWaypoint < waypoints.Length)
+                // Check the waypoint-specific behavior
+                if (currentWaypoint == 1)
                 {
-                    // Continue looking and moving towards the next waypoint
-                    Debug.Log($"Moving to waypoint {currentWaypoint}.");
-                    StartCoroutine(LookAtDirection(waypoints[currentWaypoint].position));
-                    agent.SetDestination(waypoints[currentWaypoint].position);
+                    // Perform actions specific to Waypoint 1
+                    StartCoroutine(HandleWaypoint1Actions());
                 }
                 else
                 {
-                    Debug.Log("All waypoints visited, transitioning to Idle.");
-                    TransitionToState(State.Idle);
+                    // For other waypoints, just move to the next waypoint
+                    MoveToNextWaypoint();
                 }
             }
         }
     }
+    
+    IEnumerator HandleWaypoint1Actions()
+    {
+        // Catp Idle initially
+        TransitionToState(State.Idle);
+        yield return new WaitForSeconds(1f);  // Let's be idle for a moment
+
+        // Then Catp shows Hungry behavior
+        TransitionToState(State.Hungry);
+
+        // Wait until the player feeds Catp
+        yield return new WaitUntil(() => isFed);
+
+        // Switch to Eating behavior
+        TransitionToState(State.Eating);
+
+        // Wait for eating process to complete
+        yield return new WaitForSeconds(2f);
+
+        // Be idle for 2 seconds after eating
+        TransitionToState(State.Idle);
+        yield return new WaitForSeconds(2f);
+
+        // Finally, proceed to the next waypoint
+        MoveToNextWaypoint();
+    }
+
+    void MoveToNextWaypoint()
+    {
+        currentWaypoint++;
+        if (currentWaypoint < waypoints.Length)
+        {
+            Debug.Log($"Walking: Moving to waypoint {currentWaypoint}.");
+            StartCoroutine(LookAtDirection(waypoints[currentWaypoint].position));
+            agent.SetDestination(waypoints[currentWaypoint].position);
+            TransitionToState(State.Walking);
+        }
+        else
+        {
+            Debug.Log("Walking: All waypoints visited, transitioning to Idle.");
+            TransitionToState(State.Idle);
+        }
+    }
+
     
     
     private float nextCuteSoundTime = 0f;
@@ -284,25 +320,71 @@ public class CaterpillarBehaviour : MonoBehaviour
         }
     }
 
-    public void EatingBehavior()
-    {
-        Debug.Log("Eating: Playing eating sounds and animations.");
-        // Implement eating behavior
-            isFed = true;
-            audioSource.PlayOneShot(eatSound);
-            animator.SetTrigger("Eating"); // a DotTween wiggle.
-            transform.localScale *= 1.05f;
+    // Define how many times the caterpillar should scale up in total
+private const int totalBites = 4;
+private int currentBiteCount = 0;
+private const float scalePerBite = 1.01f; // This represents a 1% scale increase per bite
 
-        // Transition based on leaf and waypoint logic
-        if (currentWaypoint == waypoints.Length - 1)
-        {
-            TransitionToState(State.Celebrating);
-        }
-        else
-        {
-            TransitionToState(State.Idle);
-        }
+public void EatingBehavior()
+{
+    if (currentBiteCount >= totalBites)
+    {
+        // If all bites are done, finalize eating
+        Debug.Log("Eating: All bites are done. Finalizing eating.");
+        FinalizeEating();
+        return;
     }
+
+    // Play eating sound and animation only if not already playing
+    if (!audioSource.isPlaying)
+    {
+        audioSource.PlayOneShot(eatSound);
+        Debug.Log("Eating: Played eating sound for bite " + (currentBiteCount + 1));
+    }
+
+    animator.SetTrigger("Eating");  // Play eating animation
+    transform.localScale *= scalePerBite;  // Scale up the caterpillar
+    Debug.Log("Eating: Caterpillar scaled for bite " + (currentBiteCount + 1));
+
+    // Increment the bite count
+    currentBiteCount++;
+
+    // Check if it's time to transition away from eating
+    if (currentBiteCount >= totalBites)
+    {
+        // If this was the last bite, proceed with finalizing the eating process
+        FinalizeEating();
+    }
+}
+
+void FinalizeEating()
+{
+    // Reset bite count for the next time
+    currentBiteCount = 0;
+
+    // Check critical conditions to decide next state
+    if ((currentWaypoint == 1 && !criticalFragmentLeaf1.activeSelf) ||
+        (currentWaypoint == 3 && !criticalFragmentLeaf2.activeSelf))
+    {
+        // Transition to Idle and then move to next waypoint after a delay
+        Debug.Log("Eating: Finished eating, transitioning to Idle.");
+        TransitionToState(State.Idle);
+        StartCoroutine(DelayedMoveToNextWaypoint(2));  // Wait 2 seconds in Idle before moving
+    }
+    else
+    {
+        // If not all conditions for waypoint logic are met, go back to Hungry or Idle
+        Debug.Log("Eating: Not all conditions met, transitioning to Hungry.");
+        TransitionToState(State.Hungry);
+    }
+}
+
+IEnumerator DelayedMoveToNextWaypoint(float delay)
+{
+    yield return new WaitForSeconds(delay);
+    MoveToNextWaypoint();
+}
+
 
     void AfraidBehavior()
     {
