@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Oculus.Interaction.Samples;
 using UnityEngine;
 using UnityEngine.AI;
@@ -24,7 +25,8 @@ public class CaterpillarBehaviour : MonoBehaviour
 
     public GameObject antPrefab; // Reference to the Ant prefab
     public int totalAnts = 3; // Total number of ants to spawn
-    private int defeatedEnemiesCount = 0;
+    private List<GameObject> spawnedAnts = new List<GameObject>();  // List to keep track of spawned ants
+    private float antSpawnDelay = 3.0f;  // Delay between spawning each ant
     public bool isFed = false;
     
     private NavMeshAgent agent;
@@ -107,6 +109,7 @@ public class CaterpillarBehaviour : MonoBehaviour
 
     void TransitionToState(State newState)
     {
+        
         // Stop the current playing coroutine if we are leaving the Idle state
         if (currentState == State.Idle && newState != State.Idle)
         {
@@ -116,7 +119,7 @@ public class CaterpillarBehaviour : MonoBehaviour
                 cuteSoundCoroutine = null;
             }
         }
-
+        Debug.Log($"Transitioning from {currentState} to {newState}");
         currentState = newState;
         Debug.Log("Transitioning to: " + newState);
     }
@@ -161,52 +164,52 @@ public class CaterpillarBehaviour : MonoBehaviour
             return;
         }
 
-        // Move towards the current waypoint
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
             {
-                Debug.Log($"Reached waypoint {currentWaypoint}.");
-                // Check the waypoint-specific behavior
-                if (currentWaypoint == 1)
+                Debug.Log($"Walking: Reached waypoint {currentWaypoint}.");
+
+                switch (currentWaypoint)
                 {
-                    // Perform actions specific to Waypoint 1
-                    StartCoroutine(HandleWaypoint1Actions());
-                }
-                else
-                {
-                    // For other waypoints, just move to the next waypoint
-                    MoveToNextWaypoint();
+                    case 1:
+                        StartCoroutine(HandleWaypoint1Actions());
+                        break;
+                    case 2:
+                        StartCoroutine(HandleWaypoint2Actions());  // Ensure this is triggered
+                        break;
+                    default:
+                        MoveToNextWaypoint();
+                        break;
                 }
             }
         }
     }
+
+
     
     IEnumerator HandleWaypoint1Actions()
     {
-        // Catp Idle initially
+        // Start Idle before eating
         TransitionToState(State.Idle);
-        yield return new WaitForSeconds(1f);  // Let's be idle for a moment
+        yield return new WaitForSeconds(2); // Idle for 2 seconds
 
-        // Then Catp shows Hungry behavior
+        // Transition to Hungry to simulate hunger behavior
         TransitionToState(State.Hungry);
+        yield return new WaitUntil(() => isFed); // Wait until the caterpillar is fed
 
-        // Wait until the player feeds Catp
-        yield return new WaitUntil(() => isFed);
-
-        // Switch to Eating behavior
+        // Ensure Catp eats and completes its eating behavior
         TransitionToState(State.Eating);
+        yield return new WaitWhile(() => currentState == State.Eating); // Wait until eating is done
 
-        // Wait for eating process to complete
-        yield return new WaitForSeconds(2f);
-
-        // Be idle for 2 seconds after eating
+        // Idle for a bit after eating
         TransitionToState(State.Idle);
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(2); // Idle for 2 seconds
 
-        // Finally, proceed to the next waypoint
+        // Now move to the next waypoint
         MoveToNextWaypoint();
     }
+
 
     void MoveToNextWaypoint()
     {
@@ -323,7 +326,7 @@ public class CaterpillarBehaviour : MonoBehaviour
     // Define how many times the caterpillar should scale up in total
 private const int totalBites = 4;
 private int currentBiteCount = 0;
-private const float scalePerBite = 1.01f; // This represents a 1% scale increase per bite
+private const float scalePerBite = 1.03f; // This represents a 1% scale increase per bite
 
 public void EatingBehavior()
 {
@@ -386,6 +389,34 @@ IEnumerator DelayedMoveToNextWaypoint(float delay)
 }
 
 
+IEnumerator HandleWaypoint2Actions()
+{
+    Debug.Log("HandleWaypoint2Actions: Entered handling for Waypoint 2");
+
+    TransitionToState(State.Idle);
+    yield return new WaitForSeconds(2);  // Idle for 2 seconds
+
+    Debug.Log("HandleWaypoint2Actions: Starting to spawn ants...");
+    StartCoroutine(SpawnAnts());  // This line should trigger the spawning
+
+    TransitionToState(State.Afraid);  // Catp should be afraid when ants appear
+
+    // Ensure we wait until all ants are defeated
+    yield return new WaitUntil(() => spawnedAnts.TrueForAll(ant => ant == null));
+
+    TransitionToState(State.Happy);  // Transition to happy after defeating all ants
+    yield return new WaitForSeconds(2);
+
+    TransitionToState(State.Idle);  // Be idle for 2 seconds before moving on
+    yield return new WaitForSeconds(2);
+
+    MoveToNextWaypoint();  // Move to the next waypoint
+}
+
+
+
+
+
     void AfraidBehavior()
     {
         Debug.Log("Afraid: Playing scared sounds and animations.");
@@ -425,6 +456,44 @@ IEnumerator DelayedMoveToNextWaypoint(float delay)
             yield return null;
         }
     }
+    
+    IEnumerator SpawnAnts()
+    {
+        Debug.Log("Spawning Ants Now");
+        for (int i = 0; i < totalAnts; i++)
+        {
+            Vector3 randomDirection = Random.insideUnitSphere * 5;
+            randomDirection.y = 0;
+            Vector3 spawnPosition = transform.position + randomDirection;
+
+            // Ensure the spawn position is not too close to the Catp
+            while (Vector3.Distance(spawnPosition, transform.position) < 0.25f)
+            {
+                randomDirection = Random.insideUnitSphere * 5;
+                randomDirection.y = 0;
+                spawnPosition = transform.position + randomDirection;
+            }
+
+            GameObject ant = Instantiate(antPrefab, spawnPosition, Quaternion.identity);
+            spawnedAnts.Add(ant);
+
+            // Set the target for the ant to follow
+            AntEnemyBehavior antBehavior = ant.GetComponent<AntEnemyBehavior>();
+            if (antBehavior != null)
+            {
+                antBehavior.target = this.transform;
+            }
+            else
+            {
+                Debug.LogError("AntBehavior component is not found on the antPrefab. Make sure it's attached.");
+            }
+
+            // Wait before spawning the next ant
+            yield return new WaitForSeconds(antSpawnDelay);
+        }
+    }
+
+
 
     
     
