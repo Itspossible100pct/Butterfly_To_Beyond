@@ -171,7 +171,7 @@ public class CaterpillarBehaviour : MonoBehaviour
         if (!agent.pathPending)
         {
             
-            if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
+            if (!agent.hasPath && currentWaypoint == 2)
             {
                 Debug.Log($"Walking: Reached waypoint {currentWaypoint}.");
 
@@ -426,8 +426,13 @@ IEnumerator HandleWaypoint2Actions()
 void AfraidBehavior()
 {
     Debug.Log("Afraid: Playing scared sounds and animations.");
+    
+    
     // Implement Afraid behavior
-    audioSource.PlayOneShot(scaredSound, 1);
+    if (!audioSource.isPlaying && !enemiesDefeated)
+    {
+        audioSource.PlayOneShot(scaredSound, 1);
+    }
     //transform.DOShakePosition(5f, 3f, 5, 2f, false, true, ShakeRandomnessMode.Full);
 
     // Check if all ants are defeated

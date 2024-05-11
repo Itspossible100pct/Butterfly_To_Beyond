@@ -101,7 +101,7 @@ public class AntEnemyBehavior : MonoBehaviour
 
     public void Die()
     {
-        //gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
 
     IEnumerator WaitAndDie()
