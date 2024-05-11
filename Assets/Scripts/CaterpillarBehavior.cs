@@ -28,6 +28,7 @@ public class CaterpillarBehaviour : MonoBehaviour
 
     public GameObject antPrefab; // Reference to the Ant prefab
     public int totalAnts = 3; // Total number of ants to spawn
+    private bool antsSpawned;
     private List<GameObject> spawnedAnts = new List<GameObject>();  // List to keep track of spawned ants
     private float antSpawnDelay = 3.0f;  // Delay between spawning each ant
     public bool isFed = false;
@@ -35,6 +36,8 @@ public class CaterpillarBehaviour : MonoBehaviour
     private NavMeshAgent agent;
     private int currentWaypoint = 0;
     private bool enemiesDefeated = false;
+    
+    private bool celebrationTriggered = false;
     
     // Serialize fields for the specific leaf fragments to check
     [SerializeField] private GameObject criticalFragmentLeaf1;
@@ -160,33 +163,30 @@ public class CaterpillarBehaviour : MonoBehaviour
     }
 
 
-    void WalkingBehavior()
-    {
-        if (currentWaypoint >= waypoints.Length)
-        {
+    void WalkingBehavior() {
+        if (currentWaypoint >= waypoints.Length) {
             Debug.LogError("Walking: Current waypoint index is out of range.");
             return;
         }
-        Debug.Log($"Remaining distance to waypoint {currentWaypoint}: {agent.remainingDistance}");
-        if (!agent.pathPending)
-        {
-            
-            if (!agent.hasPath && currentWaypoint == 2)
-            {
-                Debug.Log($"Walking: Reached waypoint {currentWaypoint}.");
 
-                switch (currentWaypoint)
-                {
-                    case 1:
-                        StartCoroutine(HandleWaypoint1Actions());
-                        break;
-                    case 2:
-                        StartCoroutine(HandleWaypoint2Actions());  // Ensure this is triggered
-                        break;
-                    default:
-                        MoveToNextWaypoint();
-                        break;
-                }
+        // Instead of relying on remaining distance, check if the path status indicates completion
+        if (agent.pathStatus == NavMeshPathStatus.PathComplete && !agent.pathPending && agent.remainingDistance <= 0.1f) {
+            Debug.Log($"Walking: Reached waypoint {currentWaypoint}.");
+
+            // Process actions based on the waypoint index
+            switch (currentWaypoint) {
+                case 1:
+                    StartCoroutine(HandleWaypoint1Actions());
+                    break;
+                case 2:
+                    // Directly invoke spawning and afraid behavior due to problematic distance calculation
+                    if (!enemiesDefeated) {
+                        StartCoroutine(HandleWaypoint2Actions());
+                    }
+                    break;
+                default:
+                    MoveToNextWaypoint();
+                    break;
             }
         }
     }
@@ -271,7 +271,7 @@ public class CaterpillarBehaviour : MonoBehaviour
         StartCoroutine(HungrySequence());
     }
 
-    IEnumerator HungrySequence()
+        IEnumerator HungrySequence()
     {
         Debug.Log("HungrySequence: Started");
 
@@ -375,10 +375,17 @@ void FinalizeEating()
     if ((currentWaypoint == 1 && !criticalFragmentLeaf1.activeSelf) ||
         (currentWaypoint == 3 && !criticalFragmentLeaf2.activeSelf))
     {
-        // Transition to Idle and then move to next waypoint after a delay
-        Debug.Log("Eating: Finished eating, transitioning to Idle.");
-        TransitionToState(State.Idle);
-        StartCoroutine(DelayedMoveToNextWaypoint(2));  // Wait 2 seconds in Idle before moving
+        if (!criticalFragmentLeaf2.activeSelf)
+        {
+            Debug.Log("Eating: Finished eating, transitioning to Celebrating.");
+            TransitionToState(State.Celebrating);
+        }
+        else
+        {
+            Debug.Log("Eating: Finished eating, transitioning to Idle.");
+            TransitionToState(State.Idle);
+            StartCoroutine(DelayedMoveToNextWaypoint(2));  // Wait 2 seconds in Idle before moving
+        }
     }
     else
     {
@@ -402,8 +409,11 @@ IEnumerator HandleWaypoint2Actions()
     TransitionToState(State.Idle);
     yield return new WaitForSeconds(2);  // Idle for 2 seconds
 
-    Debug.Log("HandleWaypoint2Actions: Starting to spawn ants...");
-    StartCoroutine(SpawnAnts());  // This line should trigger the spawning
+    // Spawn ants only if not already done by the trigger
+    if (!antsSpawned) {
+        Debug.Log("HandleWaypoint2Actions: Now spawning ants...");
+        StartCoroutine(SpawnAnts());
+    } 
 
     TransitionToState(State.Afraid);  // Catp should be afraid when ants appear
 
@@ -469,23 +479,49 @@ IEnumerator CheckEnemiesDefeated()
     }
 }
 
+private bool happyBehaviorTriggered = false;
     void HappyBehavior()
     {
-        Debug.Log("Happy: Playing happy sounds and animations.");
-        // Implement Happy behavior
-        audioSource.PlayOneShot(happySound, 1);
-        transform.DOJump(transform.position, 0.5f, 1, .2f);
+        if (!happyBehaviorTriggered)
+        {
+            Debug.Log("Happy: Playing happy sounds and animations.");
+            audioSource.PlayOneShot(happySound, 1);
+            transform.DOJump(transform.position, 0.5f, 1, .7f);
+            happyBehaviorTriggered = true;  // Set the flag to true after triggering the behavior
 
-        // Transition to next state based on conditions
-        TransitionToState(State.Idle);
+            // Check if there are more waypoints to visit
+            if (currentWaypoint < waypoints.Length - 1)
+            {
+                MoveToNextWaypoint();
+            }
+            else
+            {
+                // If no more waypoints, perhaps transition to a final state or repeat some behavior
+                TransitionToState(State.Idle);
+            }
+        }
     }
 
     void CelebratingBehavior()
     {
-        Debug.Log("Celebrating: Playing celebration animations and sounds.");
-        // Implement Celebrating behavior
-        audioSource.PlayOneShot(happySound, 1);
-        transform.DOJump(transform.position, 0.5f, 1, .2f);
+        if (!celebrationTriggered)
+        {
+            Debug.Log("Celebrating: Playing celebration animations and sounds.");
+            StartCoroutine(PlayAudioSequentially(happySound, 3));
+            transform.DOJump(transform.position, 0.5f, 3, 2.2f);
+            celebrationTriggered = true;  // Set the flag to true after triggering the behavior
+        }
+    }
+
+    IEnumerator PlayAudioSequentially(AudioClip clip, int times)
+    {
+        int count = 0;
+        while (count < times)
+        {
+            audioSource.PlayOneShot(clip, 1);
+            yield return new WaitForSeconds(clip.length);
+            count++;
+        }
     }
    
 
@@ -510,31 +546,36 @@ IEnumerator CheckEnemiesDefeated()
         if (other.CompareTag("AntSpawnTrigger") )
         {
             StartCoroutine(SpawnAnts());
-            if (currentState == State.Idle && currentWaypoint == 2 && !enemiesDefeated)
-            {
-                currentState = State.Afraid;
+            if (other.CompareTag("AntSpawnTrigger") && currentWaypoint == 2) {
+                Debug.Log("Trigger at waypoint 2 activated.");
+                antsSpawned = true;  // Mark that ants have been spawned to prevent duplicate spawns
+                StartCoroutine(SpawnAnts());
+                TransitionToState(State.Afraid);
             }
-            else if (enemiesDefeated)
-            {
-                return;
-            }
-            
         }
     }
 
     IEnumerator SpawnAnts()
     {
+        if (antsSpawned) {
+            Debug.Log("Ants have already been spawned. Exiting the spawn routine.");
+            yield break;
+        }
+
+        antsSpawned = true;
         Debug.Log("Spawning Ants Now");
+
+        
         for (int i = 0; i < totalAnts; i++)
         {
-            Vector3 randomDirection = Random.insideUnitSphere * 5;
+            Vector3 randomDirection = Random.insideUnitSphere * 7;
             randomDirection.y = 0;
             Vector3 spawnPosition = transform.position + randomDirection;
 
             // Ensure the spawn position is not too close to the Catp
             while (Vector3.Distance(spawnPosition, transform.position) < 0.25f)
             {
-                randomDirection = Random.insideUnitSphere * 5;
+                randomDirection = Random.insideUnitSphere * 7;
                 randomDirection.y = 0;
                 spawnPosition = transform.position + randomDirection;
             }
@@ -560,7 +601,6 @@ IEnumerator CheckEnemiesDefeated()
             yield return new WaitForSeconds(antSpawnDelay);
         }
     }
-
 
 
     
